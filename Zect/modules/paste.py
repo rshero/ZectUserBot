@@ -7,7 +7,7 @@
 # All rights reserved.
 
 import asyncio
-
+import requests
 import aiohttp
 from pyrogram import filters
 from pyrogram.types import Message
@@ -18,7 +18,7 @@ CMD_HELP.update(
     {
         "Misc": """
 『 **Misc** 』
-  `paste` -> Paste replied content to nekobin.com.
+  `paste` -> Paste replied content to Pasty.
   `tr` [lang code] -> Transalte a text to a given language.
   `whois` [user handle] -> Provides information about the user.
   `id` [user handle] -> Give user or chat id
@@ -28,24 +28,24 @@ CMD_HELP.update(
 
 
 @app.on_message(
-    filters.command(["neko", "nekobin", "bin", "paste"], PREFIX) & filters.me
+    filters.command(["pasty", "paste"], PREFIX) & filters.me
 )
 async def paste(_, message: Message):
     text = message.reply_to_message.text
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                "https://nekobin.com/api/documents", json={"content": text}, timeout=3
-            ) as response:
-                key = (await response.json())["result"]["key"]
+        params = {"content": text}
+        headers = {'content-type' : 'application/json'}
+        url = "https://pasty.lus.pm/api/v2/pastes/"
+        paste = requests.post(url, json=params, headers=headers)
+        key = paste.json()["id"]
     except Exception:
-        await message.edit_text("`Pasting failed`")
+        await message.edit_text("`API is down try again later`")
         await asyncio.sleep(2)
         await message.delete()
         return
     else:
-        url = f"https://nekobin.com/{key}"
-        reply_text = f"Nekofied to **Nekobin** : {url}"
+        url = f"https://pasty.lus.pm/{key}"
+        reply_text = f"**Pasted to: [Pasty]({url})\nRaw link: [Raw]({url}/raw)**"
         delete = (
             True
             if len(message.command) > 1
